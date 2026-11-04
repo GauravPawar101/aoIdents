@@ -1,6 +1,14 @@
 [package]
-name = "aoIdents"
+name = "ao_idents"
 version = "0.1.0"
 edition = "2024"
+# MSRV: edition 2024 requires Rust 1.85+. Bump deliberately, never silently.
+rust-version = "1.85"
+description = "Identity, trust and cryptography for the aoheyra mesh: node keys, signatures, sealed messages, rotating tags, contacts and replay guard (pure Rust, no I/O)"
+repository = "https://github.com/aoheyra/aoIdents"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["cryptography", "identity", "mesh", "signatures"]
+categories = ["cryptography"]
 
 [dependencies]

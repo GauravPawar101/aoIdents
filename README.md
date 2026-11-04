@@ -2,7 +2,7 @@
 
 **Identity, trust and cryptography for the aoheyra mesh.** A pure-Rust, sans-IO crate: no networking, no I/O, no FFI. It owns who a node *is*, how contacts are trusted, and how messages are signed, sealed and replay-checked.
 
-> **Status: pre-alpha, M0 (Foundations).** The repo was not visible in the `aoheyra` org when this backlog was written (it may be private, unpushed or named differently). **IDN-00** creates or locates it. Everything below is design (`IDN-xx` issues), not shipped code.
+> **Status: pre-alpha, M0 (Foundations).** IDN-00 (scaffold, package naming, MSRV, CI with cargo-audit) is implemented; everything below is design from the backlog (`IDN-xx` issues) and is not implemented until its issue is closed.
 
 Cargo package name: `ao_idents`.
 
@@ -102,6 +102,8 @@ verify(&id.public(), ctx::MESH_PACKET, &bytes, &sig)?;
 
 ## Development
 
+Requires Rust 1.85+ (edition 2024; the MSRV is pinned as `rust-version` in `Cargo.toml` and enforced by CI).
+
 ```bash
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features -- -D warnings
@@ -132,8 +134,8 @@ Issue titles carry the ID, e.g. `[IDN-09] Sealed message v1`.
 2. Read [`AGENTS.md`](AGENTS.md). It applies to humans and AI agents equally; the cryptography section is stricter than in the other repos.
 3. Security-sensitive changes need a reviewer other than the author.
 
-Report vulnerabilities privately to the maintainers (put the contact in `SECURITY.md` in IDN-00), not in a public issue.
+Report vulnerabilities privately as described in [`SECURITY.md`](SECURITY.md), not in a public issue.
 
 ## License
 
-To be decided for all four repos in APP-01. Until then, no licence is granted.
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT licence](LICENSE-MIT) at your option. Decision: APP-01, applied to all four repos.

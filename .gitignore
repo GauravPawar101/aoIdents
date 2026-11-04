@@ -1,1 +1,5 @@
 /target
+# Library crate: Cargo.lock is not committed (generated file; mirrors aoNetwork).
+# The cargo-audit CI job runs `cargo generate-lockfile` before auditing, and
+# the edition-2024 resolver is MSRV-aware.
+/Cargo.lock
