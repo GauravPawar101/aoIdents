@@ -1,6 +1,6 @@
-# AGENTS.md
+# Rules
 
-Instructions for AI coding agents and human contributors. Read this fully before changing anything. Where this file and an issue disagree on *process*, this file wins; on *scope*, the issue wins.
+Read this fully before changing anything. Where this file and an issue disagree on *process*, this file wins; on *scope*, the issue wins.
 
 `aoIdents` (package `ao_idents`) is **identity, trust and cryptography** for the aoheyra mesh: node keys, `NodeId`, identity cards, signatures, sealed messages, rotating tags, contact-book logic, replay guard, and the optional hop handshake. It is pure Rust: **no networking, no I/O, no FFI**.
 
@@ -157,6 +157,7 @@ If a command cannot run in your environment, say so plainly; do not skip silentl
 
 - **One issue per PR.** Scope creep becomes a new issue.
 - Titles carry the ID: `[IDN-09] Sealed message v1`. Branches: `idn-09-sealed-message`. Commits reference the ID.
+- **A PR body references its issue** (`For issue #8`) and states what changed, why, how and which tests were introduced - nothing else. No process-file or tooling mentions. Plain traditional Markdown only: no emojis, checkmarks, arrows or other non-ASCII characters, no HTML.
 - Labels: `type:*`, `prio:P0|P1|P2`, `size:S|M|L`. Milestones M0 to M7.
 - Respect `needs` in the backlog. Do not start IDN-09 before IDN-04 and IDN-07 are merged, etc.
 - Changes to suite, encodings, domain strings, `deny.toml` or CI are separate, reviewed changes.
