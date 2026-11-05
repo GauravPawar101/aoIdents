@@ -131,7 +131,7 @@ Issue titles carry the ID, e.g. `[IDN-09] Sealed message v1`.
 ## Contributing
 
 1. Read the issue's scope and "Done when" line, the ADR (IDN-01) and the threat model (IDN-19).
-2. Read [`AGENTS.md`](AGENTS.md). It applies to humans and AI agents equally; the cryptography section is stricter than in the other repos.
+2. Read the [rules](AGENTS.md); the cryptography section is stricter than in the other repos.
 3. Security-sensitive changes need a reviewer other than the author.
 
 Report vulnerabilities privately as described in [`SECURITY.md`](SECURITY.md), not in a public issue.

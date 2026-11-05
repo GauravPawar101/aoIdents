@@ -14,27 +14,12 @@
 //! - It signs and seals opaque bytes; it never sees packet formats, routing
 //!   or app payload schemas.
 //!
-//! # Security posture
+//! # Security
 //!
-//! The rules in `AGENTS.md` section 4 are hard requirements: suite per the
-//! crypto-suite ADR (IDN-01), a suite-ID byte in every structure, domain
-//! separation on every signature and KDF use, one canonical encoding,
-//! injected randomness, zeroized redacted secrets, constant-time comparison,
-//! reject-don't-repair, and typed errors everywhere. Nothing in this crate
-//! may panic on external input.
-//!
-//! ```text
-//!                 aoheyra  (app: Rust core + Kotlin UI)
-//!                    │  depends on all three
-//!         ┌──────────┼───────────┐
-//!         ▼          ▼           ▼
-//!     aoMesh ───▶ aoNetwork    aoIdents
-//!         │                       ▲
-//!         └───────────────────────┘
-//! ```
+//! The suite, domain strings and canonical encoding are fixed by the
+//! crypto-suite ADR (IDN-01, `docs/adr/0001`). Nothing in this crate may
+//! panic on external input.
 
-// AGENTS.md section 5: unsafe is forbidden in this crate unless there is no
-// alternative; forbid at the crate level so a future `unsafe` is a compile
-// error, not a review comment.
+// forbid, not deny: a future `unsafe` must be a compile error, not a review note.
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
