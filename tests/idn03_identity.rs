@@ -14,6 +14,7 @@ use ao_idents::{Identity, PublicIdentity, SuiteId};
 use common::TestRng;
 use ed25519_dalek::{Signature as DalekSignature, VerifyingKey};
 use proptest::prelude::*;
+use proptest::test_runner::FileFailurePersistence;
 
 /// ADR-0001 bind-agreement domain (registry in `docs/adr/0001`).
 const DOMAIN_BIND_AGREEMENT: &str = "aoheyra/idn/v1/bind-agreement";
@@ -254,15 +255,19 @@ fn generate_consumes_exactly_the_replayable_seed() {
 // --- Properties ----------------------------------------------------------
 
 fn proptest_config_for_runtime() -> proptest::test_runner::Config {
-    let mut config = proptest::test_runner::Config::default();
-    if cfg!(miri) {
+    let default = proptest::test_runner::Config::default();
+    proptest::test_runner::Config {
         // Miri isolation disallows cwd access used by proptest's default
         // file-backed persistence, so disable persistence there.
-        config.failure_persistence = None;
+        failure_persistence: if cfg!(miri) {
+            None
+        } else {
+            Some(Box::new(FileFailurePersistence::default()))
+        },
         // Keep Miri CI runtime bounded while still exercising each property.
-        config.cases = 8;
+        cases: if cfg!(miri) { 8 } else { default.cases },
+        ..default
     }
-    config
 }
 
 proptest! {
