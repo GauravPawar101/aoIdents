@@ -1,0 +1,252 @@
+//! Core types: identifiers, key material, signatures and the typed error
+//! every failure in this crate reports.
+//!
+//! Nothing here parses untrusted variable-length input yet (that arrives
+//! with the card and message codecs); constructors take fixed-size arrays,
+//! so they are total and cannot be made to over-allocate.
+
+use core::fmt;
+
+use subtle::ConstantTimeEq;
+use zeroize::{Zeroize, Zeroizing};
+
+/// Crypto suite identifier.
+///
+/// Suite `0x01` is fixed by ADR-0001. Every structure that carries a suite
+/// byte decodes it through [`TryFrom<u8>`], so an unknown suite is a typed
+/// error rather than a guess.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct SuiteId(u8);
+
+impl SuiteId {
+    /// Suite v1: Ed25519, X25519, XChaCha20-Poly1305, BLAKE3, HKDF-SHA-256.
+    pub const V1: SuiteId = SuiteId(0x01);
+
+    /// The suite byte as it appears on the wire.
+    #[must_use]
+    pub fn byte(self) -> u8 {
+        self.0
+    }
+}
+
+impl TryFrom<u8> for SuiteId {
+    type Error = IdentError;
+
+    fn try_from(byte: u8) -> Result<Self, Self::Error> {
+        match byte {
+            0x01 => Ok(SuiteId::V1),
+            other => Err(IdentError::UnknownSuite(other)),
+        }
+    }
+}
+
+/// The 16-byte cryptographic identity of a node: the first 16 bytes of the
+/// BLAKE3 hash of the public keys (ADR-0001, "NodeId derivation").
+///
+/// This is the identity relays and the directory key on; human-facing
+/// handles are an alias for it (IDN-20), never a replacement.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct NodeId([u8; 16]);
+
+impl NodeId {
+    /// Wrap raw identifier bytes.
+    #[must_use]
+    pub const fn from_bytes(bytes: [u8; 16]) -> Self {
+        Self(bytes)
+    }
+
+    /// The raw identifier bytes.
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8; 16] {
+        &self.0
+    }
+}
+
+impl fmt::Display for NodeId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write_hex(f, &self.0)
+    }
+}
+
+impl fmt::Debug for NodeId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "NodeId({self})")
+    }
+}
+
+/// An Ed25519 signature: opaque bytes until verified against a context
+/// (IDN-04). The constructor never claims validity.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct Signature([u8; 64]);
+
+impl Signature {
+    /// Wrap raw signature bytes. Validity is decided by
+    /// `PublicIdentity::verify`, never here.
+    #[must_use]
+    pub const fn from_bytes(bytes: [u8; 64]) -> Self {
+        Self(bytes)
+    }
+
+    /// The raw signature bytes.
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8; 64] {
+        &self.0
+    }
+}
+
+impl fmt::Display for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write_hex(f, &self.0)
+    }
+}
+
+impl fmt::Debug for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Signature({self})")
+    }
+}
+
+/// The public half of an identity: both public keys plus the signature
+/// that binds the agreement key to the signing key (ADR-0001,
+/// `bind-agreement`), so a substituted agreement key is detectable by any
+/// verifier holding this struct.
+#[derive(Clone, PartialEq, Eq)]
+pub struct PublicIdentity {
+    signing_pk: [u8; 32],
+    agreement_pk: [u8; 32],
+    agreement_binding: Signature,
+}
+
+impl PublicIdentity {
+    /// Assemble from raw public key bytes and the binding signature.
+    #[must_use]
+    pub const fn new(
+        signing_pk: [u8; 32],
+        agreement_pk: [u8; 32],
+        agreement_binding: Signature,
+    ) -> Self {
+        Self {
+            signing_pk,
+            agreement_pk,
+            agreement_binding,
+        }
+    }
+
+    /// The Ed25519 signing public key.
+    #[must_use]
+    pub fn signing_pk(&self) -> &[u8; 32] {
+        &self.signing_pk
+    }
+
+    /// The X25519 agreement public key.
+    #[must_use]
+    pub fn agreement_pk(&self) -> &[u8; 32] {
+        &self.agreement_pk
+    }
+
+    /// The signature binding `agreement_pk` to `signing_pk`.
+    #[must_use]
+    pub fn agreement_binding(&self) -> &Signature {
+        &self.agreement_binding
+    }
+}
+
+impl fmt::Debug for PublicIdentity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("PublicIdentity { signing_pk: ")?;
+        write_hex(f, &self.signing_pk)?;
+        f.write_str(", agreement_pk: ")?;
+        write_hex(f, &self.agreement_pk)?;
+        f.write_str(", agreement_binding: ")?;
+        fmt::Debug::fmt(&self.agreement_binding, f)?;
+        f.write_str(" }")
+    }
+}
+
+/// The secret half of an identity: the Ed25519 signing key and the X25519
+/// agreement key derived from one 32-byte seed (ADR-0001 key hierarchy).
+///
+/// - zeroized on drop (the fields are `zeroize::Zeroizing`),
+/// - `Debug` prints `<redacted>`, never contents,
+/// - equality is constant-time (`subtle`),
+/// - `Clone` is deliberate: key material must be duplicable for stores and
+///   in-memory use, and every copy zeroizes on drop.
+#[derive(Clone)]
+pub struct SecretIdentity {
+    signing_sk: Zeroizing<[u8; 32]>,
+    agreement_sk: Zeroizing<[u8; 32]>,
+}
+
+impl SecretIdentity {
+    /// Assemble from raw secret key bytes: HKDF output from
+    /// `Identity::from_seed`, or a blob loaded back through a `KeyStore`.
+    #[must_use]
+    pub fn from_parts(signing_sk: [u8; 32], agreement_sk: [u8; 32]) -> Self {
+        Self {
+            signing_sk: Zeroizing::new(signing_sk),
+            agreement_sk: Zeroizing::new(agreement_sk),
+        }
+    }
+}
+
+impl Zeroize for SecretIdentity {
+    fn zeroize(&mut self) {
+        self.signing_sk.as_mut_slice().zeroize();
+        self.agreement_sk.as_mut_slice().zeroize();
+    }
+}
+
+impl fmt::Debug for SecretIdentity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("SecretIdentity(<redacted>)")
+    }
+}
+
+impl ConstantTimeEq for SecretIdentity {
+    fn ct_eq(&self, other: &Self) -> subtle::Choice {
+        self.signing_sk
+            .as_slice()
+            .ct_eq(other.signing_sk.as_slice())
+            & self
+                .agreement_sk
+                .as_slice()
+                .ct_eq(other.agreement_sk.as_slice())
+    }
+}
+
+impl PartialEq for SecretIdentity {
+    fn eq(&self, other: &Self) -> bool {
+        bool::from(self.ct_eq(other))
+    }
+}
+
+impl Eq for SecretIdentity {}
+
+/// Every failure this crate can report: typed, with context, never a panic.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum IdentError {
+    /// A suite byte no version of this crate knows (ADR-0001: unknown is a
+    /// typed error, never a guess).
+    UnknownSuite(u8),
+}
+
+impl fmt::Display for IdentError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IdentError::UnknownSuite(byte) => {
+                write!(f, "unknown crypto suite byte 0x{byte:02x}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for IdentError {}
+
+/// Lowercase hex of `bytes`, no prefix or separators.
+fn write_hex(f: &mut fmt::Formatter<'_>, bytes: &[u8]) -> fmt::Result {
+    for byte in bytes {
+        write!(f, "{byte:02x}")?;
+    }
+    Ok(())
+}

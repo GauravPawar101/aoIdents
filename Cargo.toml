@@ -12,3 +12,9 @@ keywords = ["cryptography", "identity", "mesh", "signatures"]
 categories = ["cryptography"]
 
 [dependencies]
+# ADR-0001 vetted list: constant-time comparisons and secret zeroization.
+subtle = "2.6"
+zeroize = "1.8"
+
+[dev-dependencies]
+proptest = "1"
