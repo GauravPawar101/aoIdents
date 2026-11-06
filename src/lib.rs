@@ -23,3 +23,7 @@
 // forbid, not deny: a future `unsafe` must be a compile error, not a review note.
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
+
+mod types;
+
+pub use types::{IdentError, NodeId, PublicIdentity, SecretIdentity, Signature, SuiteId};
