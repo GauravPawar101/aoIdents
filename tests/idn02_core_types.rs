@@ -188,7 +188,21 @@ fn secret_identity_debug_is_redacted_in_collections() {
 
 // --- Properties ----------------------------------------------------------
 
+fn proptest_config_for_runtime() -> proptest::test_runner::Config {
+    let mut config = proptest::test_runner::Config::default();
+    if cfg!(miri) {
+        // Miri isolation disallows cwd access used by proptest's default
+        // file-backed persistence, so disable persistence there.
+        config.failure_persistence = None;
+        // Keep Miri CI runtime bounded while still exercising each property.
+        config.cases = 8;
+    }
+    config
+}
+
 proptest! {
+    #![proptest_config(proptest_config_for_runtime())]
+
     #[test]
     fn node_id_from_arbitrary_bytes_roundtrips(bytes in prop::array::uniform16(any::<u8>())) {
         let id = NodeId::from_bytes(bytes);

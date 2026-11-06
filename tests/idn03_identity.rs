@@ -253,7 +253,21 @@ fn generate_consumes_exactly_the_replayable_seed() {
 
 // --- Properties ----------------------------------------------------------
 
+fn proptest_config_for_runtime() -> proptest::test_runner::Config {
+    let mut config = proptest::test_runner::Config::default();
+    if cfg!(miri) {
+        // Miri isolation disallows cwd access used by proptest's default
+        // file-backed persistence, so disable persistence there.
+        config.failure_persistence = None;
+        // Keep Miri CI runtime bounded while still exercising each property.
+        config.cases = 8;
+    }
+    config
+}
+
 proptest! {
+    #![proptest_config(proptest_config_for_runtime())]
+
     #[test]
     fn arbitrary_seed_never_panics_and_is_deterministic(seed in prop::array::uniform32(any::<u8>())) {
         let a = Identity::from_seed(seed);
