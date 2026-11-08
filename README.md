@@ -2,7 +2,7 @@
 
 **Identity, trust and cryptography for the aoheyra mesh.** A pure-Rust, sans-IO crate: no networking, no I/O, no FFI. It owns who a node *is*, how contacts are trusted, and how messages are signed, sealed and replay-checked.
 
-> **Status: pre-alpha, M0 (Foundations).** IDN-00 (scaffold, package naming, MSRV, CI with cargo-audit) and IDN-02 (core types and errors) are implemented; everything below is design from the backlog (`IDN-xx` issues) and is not implemented until its issue is closed.
+> **Status: pre-alpha, M0 (Foundations).** IDN-00 (scaffold, package naming, MSRV, CI with cargo-audit), IDN-02 (core types and errors) and IDN-19 (threat model) are implemented; everything below is design from the backlog (`IDN-xx` issues) and is not implemented until its issue is closed.
 
 Cargo package name: `ao_idents`.
 
@@ -63,7 +63,7 @@ Rules that follow from this:
 - Secrets are zeroized on drop, have redacted `Debug`, and `Clone` is explicit.
 - Anything needing randomness takes an **RNG parameter**; nothing reads global randomness or the system clock.
 
-## Threat model (summary; full text is IDN-19)
+## Threat model (summary; full text is [docs/threat-model.md](docs/threat-model.md))
 
 Attackers considered: passive eavesdropper, malicious relay, impersonator, spammer or Sybil, device thief.
 
@@ -130,7 +130,7 @@ Issue titles carry the ID, e.g. `[IDN-09] Sealed message v1`.
 
 ## Contributing
 
-1. Read the issue's scope and "Done when" line, the ADR (IDN-01) and the threat model (IDN-19).
+1. Read the issue's scope and "Done when" line, the ADR (IDN-01) and the [threat model](docs/threat-model.md) (IDN-19).
 2. Read the [rules](AGENTS.md); the cryptography section is stricter than in the other repos.
 3. Security-sensitive changes need a reviewer other than the author.
 
