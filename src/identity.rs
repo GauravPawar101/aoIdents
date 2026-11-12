@@ -67,7 +67,7 @@ impl Identity {
     /// Derive an identity from a fixed 32-byte seed (ADR-0001 hierarchy).
     ///
     /// Deterministic: the same seed always produces the same keys, binding
-    /// and `NodeId` (known-answer tests in `tests/idn03_identity.rs`).
+    /// and `NodeId` (known-answer tests in `tests/identity.rs`).
     pub fn from_seed(mut seed: [u8; 32]) -> Self {
         let mut signing_sk = hkdf_expand(&seed, INFO_SIGNING);
         let mut agreement_sk = hkdf_expand(&seed, INFO_AGREEMENT);
@@ -162,7 +162,7 @@ fn compute_node_id(signing_pk: &[u8; 32], agreement_pk: &[u8; 32]) -> NodeId {
 ///
 /// `domain` must be one of this crate's ADR-registered constants (all well
 /// under 256 bytes). User-supplied contexts are validated before this is
-/// called (IDN-04), and `tests/idn03_identity.rs` checks every constant
+/// called (IDN-04), and `tests/identity.rs` checks every constant
 /// against an independently built preimage, so a too-long domain fails
 /// there instead of truncating silently.
 pub(crate) fn preimage(domain: &str, msg: &[u8]) -> Vec<u8> {
