@@ -128,7 +128,7 @@ impl Identity {
 
 /// HKDF-SHA-256 expand with salt = suite byte, one label per use
 /// (ADR-0001). Returns32 bytes.
-fn hkdf_expand(seed: &[u8; 32], info: &str) -> [u8; 32] {
+pub(crate) fn hkdf_expand(seed: &[u8; 32], info: &str) -> [u8; 32] {
     let hk = Hkdf::<Sha256>::new(Some(&[SUITE_BYTE]), seed);
     let mut okm = [0u8; 32];
     // RFC 5869 caps HKDF-Expand output at 255 * HashLen = 8160 bytes for
@@ -143,7 +143,7 @@ fn hkdf_expand(seed: &[u8; 32], info: &str) -> [u8; 32] {
 /// `NodeId = BLAKE3(domain ‖ suite byte ‖ signing_pk ‖ agreement_pk)[..16]`
 /// (ADR-0001). Both public keys are hashed so an identity can never be
 /// reinterpreted under different key material.
-fn compute_node_id(signing_pk: &[u8; 32], agreement_pk: &[u8; 32]) -> NodeId {
+pub(crate) fn compute_node_id(signing_pk: &[u8; 32], agreement_pk: &[u8; 32]) -> NodeId {
     let mut input = Vec::with_capacity(DOMAIN_NODE_ID.len() + 1 + 32 + 32);
     input.extend_from_slice(DOMAIN_NODE_ID.as_bytes());
     input.push(SUITE_BYTE);
