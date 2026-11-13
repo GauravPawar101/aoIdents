@@ -25,10 +25,15 @@
 #![deny(missing_docs)]
 
 mod card;
+mod contact;
 mod identity;
 mod sign;
 mod types;
 
 pub use card::IdentityCard;
+pub use contact::{
+    Contact, ContactBook, ContactStore, ContactUpdate, MAX_CONTACTS, MAX_PETNAME_BYTES,
+    MemoryContactStore, Trust, safety_number,
+};
 pub use identity::Identity;
 pub use types::{IdentError, NodeId, PublicIdentity, SecretIdentity, Signature, SuiteId};

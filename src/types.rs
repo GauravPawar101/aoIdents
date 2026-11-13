@@ -252,6 +252,18 @@ pub enum IdentError {
     /// A QR string whose 4-byte checksum does not match the card
     /// bytes (IDN-07).
     ChecksumMismatch,
+    /// Presented keys that do not hash to the claimed `NodeId`: for
+    /// a known contact this is a key change, for an unknown claim it
+    /// is a mismatch - nothing was stored (IDN-08).
+    KeyChanged(NodeId),
+    /// A trust or petname change aimed at a `NodeId` the book does
+    /// not hold (IDN-08).
+    UnknownContact,
+    /// A contact book already holding its maximum entry count
+    /// (IDN-08).
+    ContactBookFull,
+    /// A petname over the 64-byte local limit (IDN-08).
+    PetnameTooLong,
 }
 
 impl fmt::Display for IdentError {
@@ -275,6 +287,13 @@ impl fmt::Display for IdentError {
             IdentError::ChecksumMismatch => {
                 f.write_str("QR checksum does not match the card bytes")
             }
+            IdentError::KeyChanged(node_id) => write!(
+                f,
+                "presented keys do not match claimed NodeId {node_id}: key change or mismatch, nothing stored"
+            ),
+            IdentError::UnknownContact => f.write_str("no such contact in the book"),
+            IdentError::ContactBookFull => f.write_str("contact book is at its 512-entry capacity"),
+            IdentError::PetnameTooLong => f.write_str("petname exceeds the 64-byte limit"),
         }
     }
 }
