@@ -241,6 +241,29 @@ pub enum IdentError {
     InvalidPublicKey,
     /// A signature that does not verify under the given context/message.
     InvalidSignature,
+    /// A card display name over the 24-byte limit (IDN-07).
+    NameTooLong,
+    /// A card encoding with a bad length or an over-long name field
+    /// (IDN-07).
+    MalformedCard,
+    /// A QR string without the `aoheyra:id:` prefix, outside the
+    /// base32 alphabet, or with non-canonical padding (IDN-07).
+    InvalidQr,
+    /// A QR string whose 4-byte checksum does not match the card
+    /// bytes (IDN-07).
+    ChecksumMismatch,
+    /// Presented keys that do not hash to the claimed `NodeId`: for
+    /// a known contact this is a key change, for an unknown claim it
+    /// is a mismatch - nothing was stored (IDN-08).
+    KeyChanged(NodeId),
+    /// A trust or petname change aimed at a `NodeId` the book does
+    /// not hold (IDN-08).
+    UnknownContact,
+    /// A contact book already holding its maximum entry count
+    /// (IDN-08).
+    ContactBookFull,
+    /// A petname over the 64-byte local limit (IDN-08).
+    PetnameTooLong,
 }
 
 impl fmt::Display for IdentError {
@@ -254,6 +277,23 @@ impl fmt::Display for IdentError {
             }
             IdentError::InvalidPublicKey => f.write_str("invalid or small-order public key"),
             IdentError::InvalidSignature => f.write_str("signature does not verify"),
+            IdentError::NameTooLong => f.write_str("display name exceeds the 24-byte card limit"),
+            IdentError::MalformedCard => {
+                f.write_str("identity card encoding is malformed or truncated")
+            }
+            IdentError::InvalidQr => {
+                f.write_str("QR string must be aoheyra:id:<base32 A-Z2-7> with zero padding")
+            }
+            IdentError::ChecksumMismatch => {
+                f.write_str("QR checksum does not match the card bytes")
+            }
+            IdentError::KeyChanged(node_id) => write!(
+                f,
+                "presented keys do not match claimed NodeId {node_id}: key change or mismatch, nothing stored"
+            ),
+            IdentError::UnknownContact => f.write_str("no such contact in the book"),
+            IdentError::ContactBookFull => f.write_str("contact book is at its 512-entry capacity"),
+            IdentError::PetnameTooLong => f.write_str("petname exceeds the 64-byte limit"),
         }
     }
 }
